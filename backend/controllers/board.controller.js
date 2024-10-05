@@ -16,8 +16,18 @@ export const addBoard = async (req, res) => {
 // Función para obtener todos los tableros del usuario
 export const fetchBoards = async (req, res) => {
   try {
-    const userId = req.user.id; // Deberías tener una forma de autenticar al usuario
+    const userId = req.user.id;
+    
+    // Obtener todos los tableros del usuario
     const boards = await getAllBoards(userId);
+
+    // Si el usuario no tiene tableros, crear uno predeterminado
+    if (boards.length === 0) {
+      const defaultBoard = await createBoard("Mi SthinkingBoard", userId);
+      return res.status(200).json([defaultBoard]); // Retorna el tablero creado
+    }
+
+    // Si el usuario tiene tableros, enviarlos como respuesta
     res.status(200).json(boards);
   } catch (error) {
     console.error(error);
