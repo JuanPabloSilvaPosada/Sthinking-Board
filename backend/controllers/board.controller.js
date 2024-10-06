@@ -1,4 +1,4 @@
-import { createBoard, getAllBoards, updateBoard, deleteBoard } from '../models/board.model.js';
+import { createBoard, getAllBoards, getBoardById, updateBoard, deleteBoard } from '../models/board.model.js';
 
 // Función para crear un tablero
 export const addBoard = async (req, res) => {
@@ -32,6 +32,26 @@ export const fetchBoards = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error fetching boards' });
+  }
+};
+
+// Función para obtener la información de un tablero específico por ID
+export const fetchBoardById = async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    const userId = req.user.id;
+    
+    // Obtén la información del tablero con base en el ID y el usuario
+    const board = await getBoardById(boardId, userId);
+
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    res.status(200).json(board);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error fetching board by ID' });
   }
 };
 

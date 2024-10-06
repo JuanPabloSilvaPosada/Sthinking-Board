@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "./Button";
 import PopUp from "./PopUp";
 import { BsThreeDots } from "react-icons/bs";
 
-const Sidebar = ({ boards, setBoards, onAddBoard }) => {
+const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
   const navigate = useNavigate();
-  const [selectedBoard, setSelectedBoard] = useState(null);
-  const [actionType, setActionType] = useState(null); // 'edit' o 'delete'
+  const [actionType, setActionType] = useState(null);
   const [isPopUpOpen, setIsPopUpOpen] = useState(false);
-  const [activeMenu, setActiveMenu] = useState(null); // Mantiene el ID del tablero con el menú abierto
+  const [activeMenu, setActiveMenu] = useState(null);
   const [newTitle, setNewTitle] = useState("");
+
+  // Ref para el menú de acciones
+  const menuRef = useRef(null);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -22,22 +24,36 @@ const Sidebar = ({ boards, setBoards, onAddBoard }) => {
     setActionType(type);
     setIsPopUpOpen(true);
     if (type === "edit") {
-      setNewTitle(board.title); // Establecer el nuevo título al abrir el pop-up
+      setNewTitle(board.title);
     }
   };
 
   const toggleMenu = (boardId) => {
-    setActiveMenu((prev) => (prev === boardId ? null : boardId)); // Alterna entre cerrar y abrir
+    setActiveMenu((prev) => (prev === boardId ? null : boardId));
   };
 
   const handleClosePopUp = () => {
     setIsPopUpOpen(false);
-    setSelectedBoard(null);
     setActionType(null);
     setNewTitle("");
   };
 
+  // Manejo de clics fuera del menú
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setActiveMenu(null); // Cierra el menú si se hace clic fuera
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleEditBoard = async (newTitle) => {
+    if (!selectedBoard) return;
     try {
       const response = await fetch(
         `http://localhost:5000/api/boards/${selectedBoard.board_id}`,
@@ -62,13 +78,14 @@ const Sidebar = ({ boards, setBoards, onAddBoard }) => {
         )
       );
 
-      handleClosePopUp(); // Cierra el pop-up después de la edición
+      handleClosePopUp();
     } catch (error) {
       console.error("Error al editar el tablero:", error);
     }
   };
 
   const handleDeleteBoard = async () => {
+    if (!selectedBoard) return;
     try {
       const response = await fetch(
         `http://localhost:5000/api/boards/${selectedBoard.board_id}`,
@@ -84,36 +101,15 @@ const Sidebar = ({ boards, setBoards, onAddBoard }) => {
         throw new Error("Error al eliminar el tablero");
       }
 
-      // Filtra el tablero eliminado de la lista de tableros
       setBoards((prevBoards) =>
         prevBoards.filter((board) => board.board_id !== selectedBoard.board_id)
       );
 
-      handleClosePopUp(); // Cierra el pop-up después de eliminar
+      handleClosePopUp();
     } catch (error) {
       console.error("Error al eliminar el tablero:", error);
     }
   };
-
-  // Manejo del clic fuera del menú
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        !event.target.closest(".menu-button") &&
-        !event.target.closest(".menu-list")
-      ) {
-        setActiveMenu(null); // Cierra el menú activo si se hace clic fuera
-      }
-    };
-
-    // Agregar el evento
-    document.addEventListener("mousedown", handleClickOutside);
-
-    // Limpiar el evento
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   return (
     <div className="h-full w-64 bg-neutral-300 text-black flex flex-col justify-between">
@@ -125,19 +121,27 @@ const Sidebar = ({ boards, setBoards, onAddBoard }) => {
           {boards.map((board) => (
             <li
               key={board.board_id}
-              className="flex justify-between items-center p-2 rounded hover:bg-neutral-200 cursor-pointer"
-              onClick={() => {}}
+              className={`flex justify-between items-center p-2 rounded cursor-pointer ${
+                activeMenu === board.board_id ? "bg-neutral-200" : ""
+              }`}
+              onClick={() => setSelectedBoard(board)}
             >
               <span>{board.title}</span>
               <div className="relative w-6 h-4">
                 <button
                   className="menu-button flex items-center justify-center rounded hover:bg-neutral-400 w-7 h-4"
-                  onClick={() => toggleMenu(board.board_id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMenu(board.board_id);
+                  }}
                 >
                   <BsThreeDots />
                 </button>
                 {activeMenu === board.board_id && (
-                  <div className="menu-list absolute left-0 top-1/2 bg-white shadow-lg rounded-md transform -translate-y-1/2 translate-x-10 p-2">
+                  <div
+                    ref={menuRef} // Asigna el ref al contenedor del menú
+                    className="menu-list absolute left-0 top-1/2 bg-white shadow-lg rounded-md transform -translate-y-1/2 translate-x-10 p-2"
+                  >
                     <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-2 w-0 h-0 border-r-8 border-r-white border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
                     <ul>
                       <li
@@ -193,8 +197,8 @@ const Sidebar = ({ boards, setBoards, onAddBoard }) => {
           }
           title={
             actionType === "edit"
-              ? `Cambiarás el nombre ${selectedBoard.title} a:`
-              : `¿Seguro que deseas eliminar el tablero ${selectedBoard.title}?`
+              ? `Cambiarás el nombre ${selectedBoard?.title} a:`
+              : `¿Seguro que deseas eliminar el tablero ${selectedBoard?.title}?`
           }
         >
           {actionType === "edit" ? (

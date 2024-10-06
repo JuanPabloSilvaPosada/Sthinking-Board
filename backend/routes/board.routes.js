@@ -1,6 +1,6 @@
 // routes/board.routes.js
 import express from 'express';
-import { addBoard, fetchBoards, editBoard, removeBoard } from '../controllers/board.controller.js';
+import { addBoard, fetchBoards,fetchBoardById, editBoard, removeBoard } from '../controllers/board.controller.js';
 import { authenticateToken } from '../middlewares/auth.middleware.js'; // Asegúrate de que este middleware esté importado
 
 const router = express.Router();
@@ -10,6 +10,9 @@ router.post('/boards', authenticateToken, addBoard);
 
 // Ruta para obtener todos los tableros de un usuario (requiere autenticación)
 router.get('/boards', authenticateToken, fetchBoards);
+
+// Ruta para obtener un tablero
+router.get('/boards/:boardId', authenticateToken, fetchBoardById);
 
 // Ruta para actualizar un tablero
 router.put('/boards/:boardId', authenticateToken, editBoard);

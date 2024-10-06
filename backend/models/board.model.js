@@ -15,6 +15,15 @@ export const getAllBoards = async (userId) => {
   return result.rows; // Retorna todos los tableros del usuario
 };
 
+// Función para obtener un tablero específico por ID y el usuario asociado
+export const getBoardById = async (boardId, userId) => {
+  const result = await pool.query(
+    'SELECT * FROM boards WHERE board_id = $1 AND user_id = $2',
+    [boardId, userId]
+  );
+  return result.rows[0]; // Retorna el tablero específico
+};
+
 // Función para actualizar un tablero
 export const updateBoard = async (boardId, title) => {
   const result = await pool.query(

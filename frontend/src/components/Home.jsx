@@ -3,7 +3,8 @@ import Header from "./shared/Header";
 import Sidebar from "./shared/SideBar";
 
 const Home = () => {
-  const [boards, setBoards] = useState([]);
+  const [boards, setBoards] = useState([]); // Lista de todos los tableros
+  const [selectedBoard, setSelectedBoard] = useState(null); // Tablero seleccionado
 
   // Obtener tableros del usuario
   useEffect(() => {
@@ -17,6 +18,7 @@ const Home = () => {
 
         const data = await response.json();
         setBoards(data);
+        setSelectedBoard(data[0] || null); // Selecciona el primer tablero por defecto si existe
       } catch (error) {
         console.error("Error al obtener los tableros:", error);
       }
@@ -25,6 +27,7 @@ const Home = () => {
     fetchBoards();
   }, []);
 
+  // Maneja la creación de un nuevo tablero
   const handleAddBoard = async (title) => {
     try {
       const response = await fetch("http://localhost:5000/api/boards", {
@@ -45,13 +48,25 @@ const Home = () => {
 
   return (
     <div className="h-screen bg-neutral-100 flex flex-col">
-      <Header onAddBoard={handleAddBoard} /> {/* Pasa la función a Header */}
+      {/* Pasamos la función handleAddBoard a Header */}
+      <Header onAddBoard={handleAddBoard} /> 
       <div className="flex flex-1">
-        <Sidebar boards={boards} setBoards={setBoards} />{" "}
-        {/* Pasa setBoards a Sidebar */}
+        {/* Pasamos el estado de tableros y setSelectedBoard a Sidebar */}
+        <Sidebar 
+          boards={boards} 
+          setBoards={setBoards} 
+          setSelectedBoard={setSelectedBoard} 
+          selectedBoard={selectedBoard} // Pasamos el tablero seleccionado actual
+        />
         <div className="flex-1 p-4">
-          <h2>Bienvenido a tu tablero</h2>
-          <p>Esta es la vista principal donde aparecerán los tableros.</p>
+          {selectedBoard ? (
+            <>
+              <h2>{selectedBoard.title}</h2>
+              <p>Contenido del tablero: {selectedBoard.title}</p>
+            </>
+          ) : (
+            <p>No hay tableros disponibles. Crea un nuevo tablero para empezar.</p>
+          )}
         </div>
       </div>
     </div>
