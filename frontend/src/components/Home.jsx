@@ -7,33 +7,29 @@ import PopUp from "./shared/PopUp";
 
 const Home = () => {
   const [isPopUpOpen, setIsPopUpOpen] = useState(false);
-  const [boards, setBoards] = useState([]); // Lista de todos los tableros
-  const [selectedBoard, setSelectedBoard] = useState(null); // Tablero seleccionado
-  const [cols, setColums] = useState([]); // Columnas segun el tablero
+  const [boards, setBoards] = useState([]);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+  const [cols, setColums] = useState([]);
   const [newColumnTitle, setNewColumnTitle] = useState("");
 
   const handleOpenPopUp = () => {
     setIsPopUpOpen(true);
-    setNewColumnTitle(""); // Reiniciar el título al abrir el pop-up
+    setNewColumnTitle("");
   };
 
   const handleClosePopUp = () => {
     setIsPopUpOpen(false);
   };
 
-  // Obtener tableros del usuario
   useEffect(() => {
     const fetchBoards = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/boards", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-
         const data = await response.json();
         setBoards(data);
-        setSelectedBoard(data[0] || null); // Selecciona el primer tablero por defecto si existe
+        setSelectedBoard(data[0] || null);
       } catch (error) {
         console.error("Error al obtener los tableros:", error);
       }
@@ -54,7 +50,6 @@ const Home = () => {
             },
           }
         );
-
         const data = await response.json();
         setColums(data);
       } catch (error) {
@@ -65,7 +60,6 @@ const Home = () => {
     fetchColumns();
   }, [selectedBoard]);
 
-  // Maneja la creación de un nuevo tablero
   const handleAddBoard = async (title) => {
     try {
       const response = await fetch("http://localhost:5000/api/boards", {
@@ -76,15 +70,13 @@ const Home = () => {
         },
         body: JSON.stringify({ title }),
       });
-
       const newBoard = await response.json();
-      setBoards((prevBoards) => [...prevBoards, newBoard]); // Actualiza la lista de tableros
+      setBoards((prevBoards) => [...prevBoards, newBoard]);
     } catch (error) {
       console.error("Error al crear el tablero:", error);
     }
   };
 
-  // Manejo de creacion de una nueva columna dentro de un tablero
   const handleAddColumn = async (title, selectedBoard) => {
     try {
       const response = await fetch(
@@ -108,29 +100,81 @@ const Home = () => {
     }
   };
 
+  const handleEditColumn = async (columnId, newTitle) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/columns/${columnId}`,
+        {
+          method: "PUT", // Usa el método PUT para actualizar
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ title: newTitle }), // Enviar el nuevo título
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error al actualizar la columna");
+      }
+
+      // Actualiza el título de la columna en el estado
+      setColums((prevColumns) =>
+        prevColumns.map((col) =>
+          col.column_id === columnId ? { ...col, title: newTitle } : col
+        )
+      );
+    } catch (error) {
+      console.error("Error al actualizar la columna:", error);
+    }
+  };
+
+  const handleDeleteColumn = async (columnId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/columns/${columnId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error al eliminar la columna");
+      }
+
+      // Filtrar la columna eliminada del estado
+      setColums((prevColumns) =>
+        prevColumns.filter((col) => col.column_id !== columnId)
+      );
+    } catch (error) {
+      console.error("Error al eliminar la columna:", error);
+    }
+  };
+
   return (
     <div className="h-screen bg-neutral-100 flex flex-col">
-      {/* Pasamos la función handleAddBoard a Header */}
       <Header onAddBoard={handleAddBoard} />
       <div className="flex w-full h-full">
-        {/* Pasamos el estado de tableros y setSelectedBoard a Sidebar */}
         <Sidebar
           boards={boards}
           setBoards={setBoards}
           setSelectedBoard={setSelectedBoard}
-          selectedBoard={selectedBoard} // Pasamos el tablero seleccionado actual
+          selectedBoard={selectedBoard}
         />
         <div className="gap-4 flex-col flex w-full relative">
           <div className="p-4 shadow-xl bg-neutral-700 text-white border-b border-neutral-700">
             <h2 className="font-bold text-xl">{selectedBoard?.title}</h2>
           </div>
-          {/* Aquí se mapean las columnas */}
-          <div className="columns-container flex gap-6 py-2 px-4 overflow-x-scroll w-full h-full absolute">
+          <div className="columns-container flex gap-6 p-4 overflow-x-scroll w-full h-full absolute">
             {cols.map((col) => (
               <Column
-                key={col.column_id} // Asigna la key a cada columna
-                title={col.title} // Pasa el título de la columna como prop
-                columnDate={col.created_at} // Pasa el ID de la columna como prop
+                key={col.column_id}
+                title={col.title}
+                columnDate={col.created_at}
+                id={col.column_id}
+                 onEdit={handleEditColumn}
+                onDelete={handleDeleteColumn}
               />
             ))}
             <button
@@ -149,8 +193,8 @@ const Home = () => {
               >
                 <input
                   type="text"
-                  value={newColumnTitle} // Usa el estado para el valor
-                  onChange={(e) => setNewColumnTitle(e.target.value)} // Maneja el cambio de valor
+                  value={newColumnTitle}
+                  onChange={(e) => setNewColumnTitle(e.target.value)}
                   required
                   className="border border-gray-300 rounded-md p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nombre del nuevo columna"

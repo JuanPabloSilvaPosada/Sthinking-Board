@@ -4,8 +4,8 @@
 
 
 .columns-container{
-    top: 80px;
-    height: calc(100% - 80px);
+    top: 61px;
+    height: calc(100% - 61px);
     z-index: 1;
 }
 
