@@ -45,7 +45,7 @@ const Header = ({ onAddBoard }) => { // Recibe onAddBoard como prop
           isOpen={isPopUpOpen}
           onClose={handleClosePopUp}
           onSubmit={handleCreateBoard}
-          title="Crear Tablero"
+          title="Crear Columna"
         >
           <input
             type="text"

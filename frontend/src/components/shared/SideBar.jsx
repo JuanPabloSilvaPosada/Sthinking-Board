@@ -112,7 +112,7 @@ const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
   };
 
   return (
-    <div className="h-full w-64 bg-neutral-300 text-black flex flex-col justify-between">
+    <div className="h-full w-64 bg-neutral-300 text-black flex flex-col justify-between min-w-60">
       <div>
         <h2 className="text-xl font-semibold p-4 border-b border-gray-400">
           Mis Tableros
