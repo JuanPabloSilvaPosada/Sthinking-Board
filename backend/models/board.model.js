@@ -35,5 +35,8 @@ export const updateBoard = async (boardId, title) => {
 
 // Función para eliminar un tablero
 export const deleteBoard = async (boardId) => {
+  // Primero elimina las columnas asociadas
+  await pool.query('DELETE FROM columns WHERE board_id = $1', [boardId]);
+  // Luego elimina el tablero
   await pool.query('DELETE FROM boards WHERE board_id = $1', [boardId]);
 };
