@@ -1,69 +1,32 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "./Button";
-import PopUp from "./PopUp";
-import { BsThreeDots } from "react-icons/bs";
+import { AiOutlineEdit, AiOutlineDelete, AiOutlineCheck } from "react-icons/ai";
 
-const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
+const Sidebar = ({ boards, setBoards, setSelectedBoard }) => {
   const navigate = useNavigate();
-  const [actionType, setActionType] = useState(null);
-  const [isPopUpOpen, setIsPopUpOpen] = useState(false);
-  const [activeMenu, setActiveMenu] = useState(null);
-  const [newTitle, setNewTitle] = useState("");
+  const [hoveredBoard, setHoveredBoard] = useState(null); // Estado para rastrear el tablero sobre el que está el mouse
+  const [isEditing, setIsEditing] = useState(null); // Almacena el ID del tablero que está en modo edición
+  const [newTitle, setNewTitle] = useState(""); // Título para edición
 
-  // Ref para el menú de acciones
-  const menuRef = useRef(null);
-
+  // Cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
-  const handleMenuClick = (board, type) => {
-    setSelectedBoard(board);
-    setActionType(type);
-    setIsPopUpOpen(true);
-    if (type === "edit") {
-      setNewTitle(board.title);
-    }
-  };
-
-  const toggleMenu = (boardId) => {
-    setActiveMenu((prev) => (prev === boardId ? null : boardId));
-  };
-
-  const handleClosePopUp = () => {
-    setIsPopUpOpen(false);
-    setActionType(null);
-    setNewTitle("");
-  };
-
-  // Manejo de clics fuera del menú
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setActiveMenu(null); // Cierra el menú si se hace clic fuera
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleEditBoard = async (newTitle) => {
-    if (!selectedBoard) return;
+  // Manejar edición de tablero
+  const handleEditBoard = async (board) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/boards/${selectedBoard.board_id}`,
+        `http://localhost:5000/api/boards/${board.board_id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ title: newTitle }),
+          body: JSON.stringify({ title: newTitle || board.title }),
         }
       );
 
@@ -73,22 +36,22 @@ const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
 
       const updatedBoard = await response.json();
       setBoards((prevBoards) =>
-        prevBoards.map((board) =>
-          board.board_id === updatedBoard.board_id ? updatedBoard : board
+        prevBoards.map((b) =>
+          b.board_id === updatedBoard.board_id ? updatedBoard : b
         )
       );
 
-      handleClosePopUp();
+      setIsEditing(null); // Finaliza el modo edición
     } catch (error) {
       console.error("Error al editar el tablero:", error);
     }
   };
 
-  const handleDeleteBoard = async () => {
-    if (!selectedBoard) return;
+  // Manejar eliminación de tablero
+  const handleDeleteBoard = async (boardId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/boards/${selectedBoard.board_id}`,
+        `http://localhost:5000/api/boards/${boardId}`,
         {
           method: "DELETE",
           headers: {
@@ -101,11 +64,16 @@ const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
         throw new Error("Error al eliminar el tablero");
       }
 
-      setBoards((prevBoards) =>
-        prevBoards.filter((board) => board.board_id !== selectedBoard.board_id)
-      );
-
-      handleClosePopUp();
+      setBoards((prevBoards) => {
+        const newBoards = prevBoards.filter(
+          (board) => board.board_id !== boardId
+        );
+        // Asegúrate de que siempre haya al menos un tablero
+        if (newBoards.length === 0) {
+          return [{ board_id: "1", title: "Mi SthinkingBoard" }];
+        }
+        return newBoards;
+      });
     } catch (error) {
       console.error("Error al eliminar el tablero:", error);
     }
@@ -121,45 +89,64 @@ const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
           {boards.map((board) => (
             <li
               key={board.board_id}
-              className={`flex justify-between items-center p-2 rounded cursor-pointer ${
-                activeMenu === board.board_id ? "bg-neutral-200" : ""
-              }`}
+              className={`flex justify-between items-center p-2 rounded cursor-pointer hover:bg-neutral-200 relative`}
               onClick={() => setSelectedBoard(board)}
+              onMouseEnter={() => setHoveredBoard(board.board_id)} // Almacena el ID del tablero en el que se hace hover
+              onMouseLeave={() => setHoveredBoard(null)} // Restablece el estado al salir del hover
             >
-              <span>{board.title}</span>
-              <div className="relative w-6 h-4">
-                <button
-                  className="menu-button flex items-center justify-center rounded hover:bg-neutral-400 w-7 h-4"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleMenu(board.board_id);
-                  }}
-                >
-                  <BsThreeDots />
-                </button>
-                {activeMenu === board.board_id && (
-                  <div
-                    ref={menuRef} // Asigna el ref al contenedor del menú
-                    className="menu-list absolute left-0 top-1/2 bg-white shadow-lg rounded-md transform -translate-y-1/2 translate-x-10 p-2"
-                  >
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-2 w-0 h-0 border-r-8 border-r-white border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
-                    <ul>
-                      <li
-                        className="cursor-pointer p-2 hover:bg-gray-200 rounded"
-                        onClick={() => handleMenuClick(board, "edit")}
-                      >
-                        Editar
-                      </li>
-                      <li
-                        className="cursor-pointer p-2 hover:bg-gray-200 rounded"
-                        onClick={() => handleMenuClick(board, "delete")}
-                      >
-                        Eliminar
-                      </li>
-                    </ul>
+              {/* Mostrar el input solo si el tablero está en modo edición */}
+              {isEditing === board.board_id ? (
+                <div className="flex items-center gap-2 w-full">
+                  <input
+                    type="text"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="border-b border-gray-500 p-1 focus:outline-none focus:border-blue-500 bg-transparent w-full"
+                    placeholder={board.title}
+                  />
+                  <div className="w-12 flex gap-2">
+                    <AiOutlineCheck
+                      className="text-green-500 hover:text-green-700 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditBoard(board);
+                      }}
+                    />
+                    <AiOutlineDelete
+                      className="text-red-500 hover:text-red-700 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBoard(board.board_id);
+                      }}
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <>
+                  {/* Mostrar el título del tablero normalmente */}
+                  <span className="w-full">{board.title}</span>
+                  {/* Mostrar los botones de editar y eliminar solo cuando el mouse esté sobre el tablero */}
+                  {hoveredBoard === board.board_id && (
+                    <div className="flex items-center gap-2 w-12">
+                      <AiOutlineEdit
+                        className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNewTitle(board.title); // Almacena el título actual
+                          setIsEditing(board.board_id); // Activa el modo edición para el tablero seleccionado
+                        }}
+                      />
+                      <AiOutlineDelete
+                        className="text-red-500 hover:text-red-700 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBoard(board.board_id);
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -182,39 +169,6 @@ const Sidebar = ({ boards, setBoards, selectedBoard, setSelectedBoard }) => {
           className="w-full hover:bg-red-600"
         />
       </div>
-
-      {isPopUpOpen && (
-        <PopUp
-          isOpen={isPopUpOpen}
-          onClose={handleClosePopUp}
-          onSubmit={
-            actionType === "edit"
-              ? (e) => {
-                  e.preventDefault();
-                  handleEditBoard(newTitle);
-                }
-              : handleDeleteBoard
-          }
-          title={
-            actionType === "edit"
-              ? `Cambiarás el nombre ${selectedBoard?.title} a:`
-              : `¿Seguro que deseas eliminar el tablero ${selectedBoard?.title}?`
-          }
-        >
-          {actionType === "edit" ? (
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              required
-              className="border border-gray-300 rounded-md p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nuevo nombre del tablero"
-            />
-          ) : (
-            <p>Esta acción no se puede deshacer.</p>
-          )}
-        </PopUp>
-      )}
     </div>
   );
 };
