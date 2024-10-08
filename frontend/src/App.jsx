@@ -3,17 +3,52 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginForm from "./components/auth/LoginForm";
 import RegisterForm from "./components/auth/RegisterForm";
 import Home from "./components/Home";
+import NotFound from "./components/shared/NotFound";
+import PrivateRoute from "./components/PrivateRoute";
+import PublicRoute from "./components/PublicRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Default route */}
-        <Route path="/" element={<LoginForm />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<RegisterForm />} />
+        {/* Rutas públicas */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginForm />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <LoginForm />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterForm />
+            </PublicRoute>
+          }
+        />
 
-        <Route path="/home" element={<Home />} />
+        {/* Rutas protegidas */}
+        <Route
+          path="/home"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Ruta no encontrada */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
