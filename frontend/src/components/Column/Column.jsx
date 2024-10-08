@@ -11,6 +11,14 @@ const Column = ({ title, columnDate, id, onDelete, onEdit }) => {
   const [isAddingTask, setIsAddingTask] = useState(false); // Estado para mostrar el input de añadir tarea
   const [newTaskTitle, setNewTaskTitle] = useState(""); // Estado para almacenar el título de la nueva tarea
 
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0"); // Los meses son 0-indexados
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`; // Formato: dd/mm/yyyy
+  };
+
   // Obtener las tareas de la columna
   useEffect(() => {
     fetchTasks();
@@ -104,6 +112,10 @@ const Column = ({ title, columnDate, id, onDelete, onEdit }) => {
     }
   };
 
+  useEffect(() => {
+    setNewTitle(title);
+  }, [title]);
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-4 h-min max-w-64 min-w-64 w-full flex flex-col gap-2">
       <div className="flex justify-between items-center gap-2">
@@ -120,7 +132,12 @@ const Column = ({ title, columnDate, id, onDelete, onEdit }) => {
         <div className="flex gap-2">
           {isEditing ? (
             <button
-              onClick={() => onEdit(id, newTitle)}
+              onClick={() => {
+                onEdit(id, newTitle);
+                setNewTaskTitle(""); // Limpiar el título de la nueva tarea
+                setIsAddingTask(false); // Cerrar el input de añadir tarea
+                setIsEditing(false); // Dejar de editar el título de la columna
+              }}
               className="text-green-500 hover:text-green-700"
             >
               <AiOutlineCheck size={20} />
@@ -202,7 +219,9 @@ const Column = ({ title, columnDate, id, onDelete, onEdit }) => {
           onClose={() => setSelectedTask(null)}
         />
       )}
-      <span className="flex justify-end text-neutral-300">{columnDate}</span>
+      <span className="flex justify-end text-neutral-300">
+        {formatDate(columnDate)}
+      </span>
     </div>
   );
 };
