@@ -62,7 +62,27 @@ const Home = () => {
 
   const handleAddBoard = async (title) => {
     try {
+      // Primero, obtén la lista de tableros existentes
       const response = await fetch("http://localhost:5000/api/boards", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const boards = await response.json();
+
+      // Verifica si el título ya existe
+      const boardExists = boards.some((board) => board.title === title);
+
+      if (boardExists) {
+        // Maneja el error: el tablero ya existe
+        alert("El tablero ya existe. Por favor, elige otro nombre.");
+        return; // Salir de la función si el tablero ya existe
+      }
+
+      // Si el tablero no existe, procede a crearlo
+      const createResponse = await fetch("http://localhost:5000/api/boards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,7 +90,8 @@ const Home = () => {
         },
         body: JSON.stringify({ title }),
       });
-      const newBoard = await response.json();
+
+      const newBoard = await createResponse.json();
       setBoards((prevBoards) => [...prevBoards, newBoard]);
     } catch (error) {
       console.error("Error al crear el tablero:", error);
@@ -173,7 +194,7 @@ const Home = () => {
                 title={col.title}
                 columnDate={col.created_at}
                 id={col.column_id}
-                 onEdit={handleEditColumn}
+                onEdit={handleEditColumn}
                 onDelete={handleDeleteColumn}
               />
             ))}

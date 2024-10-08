@@ -16,9 +16,31 @@ const Sidebar = ({ boards, setBoards, setSelectedBoard }) => {
   };
 
   // Manejar edición de tablero
-  const handleEditBoard = async (board) => {
+  const handleEditBoard = async (board, newTitle) => {
     try {
-      const response = await fetch(
+      // Primero, obtén la lista de tableros existentes
+      const response = await fetch("http://localhost:5000/api/boards", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const boards = await response.json();
+
+      // Verifica si el nuevo título ya existe (excluyendo el tablero que se está editando)
+      const boardExists = boards.some(
+        (b) => b.title === newTitle && b.board_id !== board.board_id
+      );
+
+      if (boardExists) {
+        // Maneja el error: el tablero ya existe
+        alert("El tablero ya existe. Por favor, elige otro nombre.");
+        return; // Salir de la función si el tablero ya existe
+      }
+
+      // Si el nuevo título no existe, procede a editar el tablero
+      const editResponse = await fetch(
         `http://localhost:5000/api/boards/${board.board_id}`,
         {
           method: "PUT",
@@ -30,11 +52,11 @@ const Sidebar = ({ boards, setBoards, setSelectedBoard }) => {
         }
       );
 
-      if (!response.ok) {
+      if (!editResponse.ok) {
         throw new Error("Error al editar el tablero");
       }
 
-      const updatedBoard = await response.json();
+      const updatedBoard = await editResponse.json();
       setBoards((prevBoards) =>
         prevBoards.map((b) =>
           b.board_id === updatedBoard.board_id ? updatedBoard : b
