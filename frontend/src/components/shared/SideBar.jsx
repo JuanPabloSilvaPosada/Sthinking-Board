@@ -176,14 +176,6 @@ const Sidebar = ({ boards, setBoards, setSelectedBoard }) => {
 
       <div className="flex flex-col p-4 gap-2">
         <Button
-          text="Configuración"
-          onClick={() => navigate("/settings")}
-          backgroundColor="bg-slate-900"
-          textColor="text-white"
-          hoverColor="bg-slate-700"
-          className="w-full px-4 py-2 rounded"
-        />
-        <Button
           text="Cerrar Sesión"
           onClick={handleLogout}
           backgroundColor="bg-neutral-900"
