@@ -37,22 +37,47 @@ const OpenTask = ({
           className="popup-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
           onClick={handleOutsideClick}
         >
-          <div className="flex flex-col gap-4 bg-white rounded-lg shadow-lg p-4 w-96">
+          <div className="flex flex-col gap-4 bg-white rounded-lg shadow-lg p-4 w-6/12 h-4/5">
             <div className="flex flex-col gap-2">
-              <h2 className="text-xl font-semibold">Editar Tarea</h2>
-              <h4 className="text-md">Columna: {columnName}</h4>
               <input
                 type="text"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="border border-gray-300 rounded-md p-1 w-full"
+                className="rounded-md p-1 w-full font-semibold focus:outline focus:outline-blue-500 focus:bg-gray-50 text-lg"
               />
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Añade una descripción (opcional)"
-                className="border border-gray-300 rounded-md p-1 w-full h-24"
-              />
+              <div className="border-t border-gray-200 shadow-sm"></div>
+              <h2 className="text-sm font-light text-gray-600">
+                en lista:{" "}
+                <span className="font-semibold text-gray-800">
+                  {columnName}
+                </span>
+              </h2>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-gray-800">
+                  Descripción
+                </h3>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Añade una descripción más detallada..."
+                  className="border border-gray-300 rounded-md p-2 w-full h-24"
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-gray-800">
+                  Actividad
+                </h3>
+                <div className="flex items-center space-x-4">
+                  <div className="w-full h-8 max-w-8 flex items-center justify-center bg-blue-500 text-white rounded-full text-xl">
+                    J
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Escribe un comentario..."
+                    className="border border-gray-300 rounded-md p-2 w-full"
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button
